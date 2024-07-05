@@ -219,7 +219,7 @@ abstract class BaseService implements BaseServiceInterface
                 ->latest()->firstOrFail();
 
             if (!is_null($this->parentCallback) && method_exists($this, $this->parentCallback)) {
-                $callbackResponse = call_user_func_array([$this, $this->parentCallback], [$latest]);
+                $callbackResponse = call_user_func_array([$this, $this->parentCallback], [$latest, $data]);
                 if ($callbackResponse) {
                     return $callbackResponse;
                 }
