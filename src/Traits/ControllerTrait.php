@@ -17,8 +17,12 @@ trait ControllerTrait
     public function search(Request $request): \Illuminate\Support\Collection|Collection|LengthAwarePaginator|array
     {
 
-
-        $query = $this->makeQuery($this->service->getModel()->withRelations(), $request);
+        $baseClass = $this->service->getModel()::class;
+        $queryBase = $this->service->getModel()->query();
+        if (method_exists($baseClass, 'scopeWithRelations')) {
+            $queryBase = $queryBase->withRelations();
+        }
+        $query = $this->makeQuery($queryBase, $request);
 
         if ($request->has('paginate'))
             return $query

@@ -8,9 +8,6 @@ use Illuminate\Validation\ValidationException;
 
 trait RequestTrait
 {
-    public array $replaceOnUpdate = [];
-
-    public array $excludeOnUpdate = [];
 
     public function create($request): array
     {
@@ -21,7 +18,8 @@ trait RequestTrait
 
     public function update($request): array
     {
-        $replaces = collect($this->replaceOnUpdate);
+
+        $replaces = collect($this->replaceOnUpdate ?? []);
         $validators = collect($this->validators);
 
         if (count($this->excludeOnUpdate)) {
