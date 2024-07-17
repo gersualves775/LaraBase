@@ -24,10 +24,15 @@ trait ControllerTrait
         }
         $query = $this->makeQuery($queryBase, $request);
 
-        if ($request->has('paginate'))
-            return $query
-                ->paginate($request->get('per_page', 10));
-
+        if ($request->has('paginate')) {
+            $paginated = $query->paginate($request->get('per_page', 10));
+            if (property_exists($this, 'resource') && method_exists($this->resource, 'resource')) {
+                $paginated->getCollection()->transform(function ($item) {
+                    return $this->resource::resource($item);
+                });
+            }
+            return $paginated;
+        }
         return $query->get();
     }
 
