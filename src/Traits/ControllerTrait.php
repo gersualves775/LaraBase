@@ -33,6 +33,11 @@ trait ControllerTrait
             }
             return $paginated;
         }
+        if ($request->has('limit')) {
+            return $query->limit($request->get('limit'))->get();
+        }
+
+
         return $query->get();
     }
 
@@ -44,6 +49,13 @@ trait ControllerTrait
             [AllowedFilter::trashed()]
         );
 
+        foreach ($allowedFilters as $index => $allowedFilter) {
+            if ($allowedFilter instanceof AllowedFilter) {
+                $position = array_search($allowedFilter->getName(), $allowedFilters);
+                if ($position !== false)
+                    unset($allowedFilters[$position]);
+            }
+        }
 
         $sortables = array_merge(
             ['created_at', $this->service->getModel()->getKeyName()],

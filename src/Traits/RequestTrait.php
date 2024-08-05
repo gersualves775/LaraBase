@@ -19,16 +19,16 @@ trait RequestTrait
     public function update($request): array
     {
 
-        $replaces = collect($this->replaceOnUpdate ?? []);
+        $replaces = property_exists($this, 'replaceOnUpdate') ? collect($this->replaceOnUpdate ?? []) : [];
         $validators = collect($this->validators);
 
-        if (count($this->excludeOnUpdate)) {
+        if (property_exists($this, 'excludeOnUpdate') && count($this->excludeOnUpdate)) {
             $validators = $validators->except($this->excludeOnUpdate);
         }
 
         if ($replaces->isNotEmpty()) {
             $validators = $validators->map(
-                fn ($rule, $key) => $replaces->get($key) ?? $rule
+                fn($rule, $key) => $replaces->get($key) ?? $rule
             );
         }
 
