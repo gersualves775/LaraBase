@@ -26,7 +26,7 @@ trait RequestTrait
             $validators = $validators->except($this->excludeOnUpdate);
         }
 
-        if ($replaces->isNotEmpty()) {
+        if ($replaces && $replaces->isNotEmpty()) {
             $validators = $validators->map(
                 fn($rule, $key) => $replaces->get($key) ?? $rule
             );
