@@ -89,10 +89,10 @@ trait ControllerTrait
         }
     }
 
-    public function show(int $id)
+    public function show(int $id, Request $request)
     {
         try {
-            $response = $this->service->get($id);
+            $response = $this->service->get($id, $request);
 
             if (property_exists($this, 'resource') && method_exists($this?->resource, 'resource')) {
                 return $this->resource::resource($response);

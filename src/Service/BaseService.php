@@ -44,10 +44,6 @@ abstract class BaseService implements BaseServiceInterface
 
     public function __call($name, $arguments)
     {
-        if ($name === 'get') {
-            $this->repository->withRelations();
-        }
-
         return call_user_func_array([$this, $name], $arguments);
     }
 
@@ -71,10 +67,10 @@ abstract class BaseService implements BaseServiceInterface
         return $this->repository->getModel();
     }
 
-    protected function get(?int $id = null)
+    protected function get(?int $id = null, Request|null $request = null)
     {
         if ($id) {
-            return $this->repository->get($id);
+            return $this->repository->get($id, $request);
         }
 
         return $this->repository->get();
@@ -83,7 +79,8 @@ abstract class BaseService implements BaseServiceInterface
     /**
      * @throws Exception
      */
-    protected function store(Request|array $data)
+    protected
+    function store(Request|array $data)
     {
         if (is_array($data)) {
             $data = new Request($data);
@@ -101,7 +98,8 @@ abstract class BaseService implements BaseServiceInterface
     /**
      * @throws Exception
      */
-    protected function update(int $id, Request|array $data)
+    protected
+    function update(int $id, Request|array $data)
     {
         if (is_array($data)) {
             $data = new Request($data);
@@ -118,12 +116,14 @@ abstract class BaseService implements BaseServiceInterface
 
     }
 
-    protected function destroy(int $id)
+    protected
+    function destroy(int $id)
     {
         return $this->repository->destroy($id);
     }
 
-    public function mergeRequest(Request $request, array $array): Request
+    public
+    function mergeRequest(Request $request, array $array): Request
     {
         $request->request->add($array);
         $request->merge($array);
@@ -131,7 +131,8 @@ abstract class BaseService implements BaseServiceInterface
         return $request;
     }
 
-    public function paginate()
+    public
+    function paginate()
     {
         return $this->repository
             ->withRelations()
@@ -139,14 +140,16 @@ abstract class BaseService implements BaseServiceInterface
             ->paginate(request()->request->get('limit') ?? 10, request()->request->get('page') ?? 1);
     }
 
-    public function applyExcept()
+    public
+    function applyExcept()
     {
         foreach ($this->excepts as $index => $except) {
             request()->request->remove($except);
         }
     }
 
-    public function applyCasts()
+    public
+    function applyCasts()
     {
         foreach ($this->casts as $index => $cast) {
             $data = request()->get($index);
@@ -170,7 +173,8 @@ abstract class BaseService implements BaseServiceInterface
     /**
      * @throws Exception
      */
-    protected function customStore(Request|array $data)
+    protected
+    function customStore(Request|array $data)
     {
         if (is_array($data)) {
             $data = new Request($data);
@@ -237,7 +241,8 @@ abstract class BaseService implements BaseServiceInterface
     /**
      * @throws ReflectionException
      */
-    private function persistBefores($service, $settings, $data): string
+    private
+    function persistBefores($service, $settings, $data): string
     {
         $childrenService = new $service();
         $childrenModel = (new ReflectionClass($childrenService->getModel()::class))->getShortName();
@@ -257,7 +262,8 @@ abstract class BaseService implements BaseServiceInterface
     /**
      * @throws ReflectionException
      */
-    private function persistSync($model, $service, $settings, $data, ...$options): string
+    private
+    function persistSync($model, $service, $settings, $data, ...$options): string
     {
         $primaryKey = $this->getModel()->getKeyName();
         $childrenService = new $service();
@@ -297,7 +303,8 @@ abstract class BaseService implements BaseServiceInterface
     /**
      * @throws ReflectionException
      */
-    private function persistAfters($service, $settings, $data, ...$options): string
+    private
+    function persistAfters($service, $settings, $data, ...$options): string
     {
         $childrenService = new $service();
         $childrenModel = (new ReflectionClass($childrenService->getModel()::class))->getShortName();
@@ -320,7 +327,8 @@ abstract class BaseService implements BaseServiceInterface
         return $childrenModel;
     }
 
-    public function customValidations($settings, $service)
+    public
+    function customValidations($settings, $service)
     {
         if (!isset($settings['persist'])) {
             throw new \Exception('O persist precisa ser definido');
@@ -341,7 +349,8 @@ abstract class BaseService implements BaseServiceInterface
      * @throws ReflectionException
      * @throws Exception
      */
-    private function validate(): void
+    private
+    function validate(): void
     {
         if (!$this->repositoryRequest || !class_exists($this->repositoryRequest::class)) {
             $className = (new ReflectionClass($this->repository))->getShortName();

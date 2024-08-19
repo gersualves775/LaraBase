@@ -22,10 +22,29 @@ abstract class BaseRepository implements BaseRepositoryInterface
         $this->model = $model;
     }
 
-    public function get(?int $id = null)
+    public function get(?int $id = null, Request|null $request = null)
     {
+        $model = $this->model;
+
+        if (
+            !$request->has('scopes') &&
+            !$request->has('noRelations') &&
+            method_exists($model, 'scopeWithRelations')
+        ) {
+            return $model->withRelations()->get($id);
+        }
+
+        if ($request->has('scopes')) {
+            foreach ($request->input('scopes') as $index => $scope) {
+                if (method_exists($model, $scope)) {
+                    $model = $model->$scope();
+                }
+            }
+        }
+
         if ($id) {
-            return $this->model = $this->model->find($id);
+            return $this->model = $model->find($id);
+
         }
 
         return $this->model = $this->model->get();
@@ -86,7 +105,7 @@ abstract class BaseRepository implements BaseRepositoryInterface
             $data = new Request($data);
         }
 
-        if (! $data->exists($this->getModel()->getKeyName())) {
+        if (!$data->exists($this->getModel()->getKeyName())) {
             $myModel = new $this->model();
             $myModel->fill($data->all());
         } else {
@@ -147,7 +166,7 @@ abstract class BaseRepository implements BaseRepositoryInterface
         $pos = strpos($imagem, ';');
         $type = explode(':', substr($imagem, 0, $pos))[1];
         $type = str_replace(['image/', 'application/'], '', $type);
-        $filename = ($filename ?? Uuid::uuid4()).'.'.$type;
+        $filename = ($filename ?? Uuid::uuid4()) . '.' . $type;
 
         $imagem = trim($imagem);
         $imagem = str_replace('data:image/png;base64,', '', $imagem);
@@ -157,8 +176,8 @@ abstract class BaseRepository implements BaseRepositoryInterface
         $imagem = str_replace('data:application/pdf;base64,', '', $imagem);
         $imagem = str_replace(' ', '+', $imagem);
 
-        Storage::disk('local')->put($path.$filename, base64_decode($imagem));
+        Storage::disk('local')->put($path . $filename, base64_decode($imagem));
 
-        return url('storage/'.str_replace('public/', '', ltrim($path, '/')).$filename);
+        return url('storage/' . str_replace('public/', '', ltrim($path, '/')) . $filename);
     }
 }
