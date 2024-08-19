@@ -176,6 +176,7 @@ abstract class BaseService implements BaseServiceInterface
     protected
     function customStore(Request|array $data)
     {
+        $childrenStored = null;
         if (is_array($data)) {
             $data = new Request($data);
         }
@@ -187,7 +188,7 @@ abstract class BaseService implements BaseServiceInterface
                 $this->customValidations($settings, $service);
                 $persist = $settings['persist'];
                 if ($persist === PersistEnum::BEFORE_PERSIST) {
-                    $childrenModelName = lcfirst($this->persistBefores($service, $settings, $data));
+                    list($childrenModelName, $childrenStored) = lcfirst($this->persistBefores($service, $settings, $data));
                     $relationName = $settings['customRelationName'] ?? $childrenModelName;
                     $relationBag[] = $relationName;
                 }
@@ -207,9 +208,17 @@ abstract class BaseService implements BaseServiceInterface
                     if (array_key_exists('options', $settings) && in_array(LarabaseOptions::SYNC, $settings['options'])) {
                         $relationName = $this->persistSync($model, $service, $settings, $data, ...['key' => $modelKeyName, 'value' => $model->$modelKeyName]);
                     }
-                    $childrenModelName = lcfirst($this->persistAfters($service, $settings, $data, ...['key' => $modelKeyName, 'value' => $model->$modelKeyName]));
+                    list($childrenModelName, $childrenStored) = $this->persistAfters($service, $settings, $data, ...['key' => $modelKeyName, 'value' => $model->$modelKeyName]);
+                    $childrenModelName = lcfirst($childrenModelName);
                     $relationName = $settings['customRelationName'] ?? $childrenModelName;
                     $relationBag[] = $relationName;
+                }
+
+                if ($childrenStored && in_array(LarabaseOptions::MORPH, $settings['options'])) {
+                    $this->persistMorph(
+                        model: $model,
+                        settings: $settings,
+                        modelKey: $childrenStored);
                 }
             }
 
@@ -238,15 +247,35 @@ abstract class BaseService implements BaseServiceInterface
         }
     }
 
+    public function persistMorph($model, $settings, $modelKey)
+    {
+        $morphType = get_class($model);
+        $morphId = $model->getKey();
+        $related_column = $settings['options']['related_column'];
+
+        $morphableTable = $settings['options']['morph_name'];
+        if (class_exists("App\\Models\\{$morphableTable}")) {
+            $morphableTable = "App\\Models\\{$morphableTable}";
+        }
+
+        $morphable->create([
+            'morph_id' => $morphId,
+            'morph_type' => $morphType,
+            $related_column => null
+        ]);
+
+    }
+
     /**
      * @throws ReflectionException
      */
     private
-    function persistBefores($service, $settings, $data): string
+    function persistBefores($service, $settings, $data): array|string
     {
         $childrenService = new $service();
         $childrenModel = (new ReflectionClass($childrenService->getModel()::class))->getShortName();
         $childrenData = $data->get(Str::snake($childrenModel));
+
 
         if (empty($childrenData)) {
             return '';
@@ -256,7 +285,7 @@ abstract class BaseService implements BaseServiceInterface
         $children = $childrenService->store(new Request($childrenData));
         $this->mergeRequest($data, [$childrenKeyName => $children[$childrenKeyName]]);
 
-        return $childrenModel;
+        return [$childrenModel, $children];
     }
 
     /**
@@ -303,12 +332,12 @@ abstract class BaseService implements BaseServiceInterface
     /**
      * @throws ReflectionException
      */
-    private
-    function persistAfters($service, $settings, $data, ...$options): string
+    private function persistAfters($service, $settings, $data, ...$options): array
     {
         $childrenService = new $service();
         $childrenModel = (new ReflectionClass($childrenService->getModel()::class))->getShortName();
         $childrenData = $data->get(Str::snake($childrenModel));
+        $stored = null;
 
         if (empty($childrenData)) {
             return '';
@@ -317,14 +346,14 @@ abstract class BaseService implements BaseServiceInterface
         if (array_filter($childrenData, fn($content) => is_array($content))) {
             foreach ($childrenData as $index => $childrenDatum) {
                 $childrenDatum = array_merge($childrenDatum, [$options['key'] => $options['value']]);
-                $childrenService->store(new Request($childrenDatum));
+                $stored = $childrenService->store(new Request($childrenDatum));
             }
         } else {
             $childrenData = array_merge($childrenData, [$options['key'] => $options['value']]);
-            $childrenService->store(new Request($childrenData));
+            $stored = $childrenService->store(new Request($childrenData));
         }
 
-        return $childrenModel;
+        return [$childrenModel, $stored];
     }
 
     public

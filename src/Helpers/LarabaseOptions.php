@@ -2,7 +2,8 @@
 
 namespace gersonalves\laravelBase\Helpers;
 
-class LarabaseOptions
+enum LarabaseOptions: string
 {
-    const SYNC = 'SYNC';
+    case SYNC = 'SYNC';
+    case MORPH = 'MORPH';
 }
