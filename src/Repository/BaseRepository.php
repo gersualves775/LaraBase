@@ -24,21 +24,21 @@ abstract class BaseRepository implements BaseRepositoryInterface
 
     public function get(?int $id = null, Request|null $request = null)
     {
-        $model = clone ($this->model);
+        $model = clone($this->model);
 
-        if (
-            !$request->has('scopes') &&
-            !$request->has('noRelations') &&
+        if ((!$request ||
+                (!$request->has('scopes') &&
+                    !$request->has('noRelations'))) &&
             method_exists($model, 'scopeWithRelations')
         ) {
-            if($id){
+            if ($id) {
                 return $this->model = $model->withRelations()->find($id);
             }
 
             return $this->model = $model->withRelations()->get();
         }
 
-        if ($request->has('scopes')) {
+        if ($request && $request->has('scopes')) {
             foreach ($request->input('scopes') as $index => $scope) {
                 if (method_exists($model, $scope)) {
                     $model = $model->$scope();
@@ -53,6 +53,7 @@ abstract class BaseRepository implements BaseRepositoryInterface
 
         return $this->model = $this->model->get();
     }
+
 
     public function findBy(string $column, mixed $value)
     {
