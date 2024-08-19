@@ -218,7 +218,7 @@ abstract class BaseService implements BaseServiceInterface
                     $this->persistMorph(
                         model: $model,
                         settings: $settings,
-                        modelKey: $childrenStored);
+                        modelKey: $childrenStored->getKey());
                 }
             }
 
@@ -247,23 +247,32 @@ abstract class BaseService implements BaseServiceInterface
         }
     }
 
-    public function persistMorph($model, $settings, $modelKey)
+    /**
+     * @throws Exception
+     */
+    public function persistMorph($model, $settings, $modelKey): void
     {
         $morphType = get_class($model);
         $morphId = $model->getKey();
-        $related_column = $settings['options']['related_column'];
 
-        $morphableTable = $settings['options']['morph_name'];
-        if (class_exists("App\\Models\\{$morphableTable}")) {
-            $morphableTable = "App\\Models\\{$morphableTable}";
+        if (!array_key_exists('morph_name', $settings['options']) || !array_key_exists('related_column', $settings['options']) || !array_key_exists('morph_class', $settings['options'])) {
+            throw new Exception("Os campos morph_name, related_column e morph_class são obrigatórios.");
         }
 
-        $morphable->create([
-            'morph_id' => $morphId,
-            'morph_type' => $morphType,
-            $related_column => null
-        ]);
+        $morphName = $settings['options']['morph_name'];
+        $related_column = $settings['options']['related_column'];
+        $morphClass = $settings['options']['morph_class'];
 
+
+        if (!class_exists($morphClass)) {
+            throw new Exception("A classe {$morphClass} não existe.");
+        }
+
+        $morphClass::create([
+            "{$morphName}_id" => $morphId,
+            "{$morphName}_type" => $morphType,
+            $related_column => $modelKey
+        ]);
     }
 
     /**
