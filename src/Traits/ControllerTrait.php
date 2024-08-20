@@ -46,7 +46,7 @@ trait ControllerTrait
         $allowedFilters = array_merge(
             $this->service->getModel()->getFillable(),
             $this->extraFilters ?? [],
-            [AllowedFilter::trashed()]
+            [AllowedFilter::trashed(), AllowedFilter::exact($this->service->getModel()->getKeyName())]
         );
 
         foreach ($allowedFilters as $index => $allowedFilter) {
