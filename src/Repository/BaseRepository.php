@@ -2,6 +2,7 @@
 
 namespace gersonalves\laravelBase\Repository;
 
+use Exception;
 use gersonalves\laravelBase\Helpers\fileEnum;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Database\Eloquent\Collection;
@@ -10,6 +11,8 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\UrlGenerator;
 use Illuminate\Support\Facades\Storage;
 use Ramsey\Uuid\Uuid;
+use ReflectionClass;
+use ReflectionException;
 
 abstract class BaseRepository implements BaseRepositoryInterface
 {
@@ -20,6 +23,24 @@ abstract class BaseRepository implements BaseRepositoryInterface
     public function __construct(Model $model)
     {
         $this->model = $model;
+    }
+
+    /**
+     * @throws ReflectionException
+     */
+    public function __call($name, $arguments)
+    {
+        $reflection = new ReflectionClass(get_called_class());
+        $defaultMethodName = Str::lcfirst(str_replace('assign', '', $name));
+
+        if (!$reflection->hasMethod($defaultMethodName)) {
+            throw new Exception("Method $defaultMethodName not found in " . get_called_class());
+        }
+
+        $method = $reflection->getMethod($defaultMethodName);
+
+        $this->model = $method->invokeArgs($this, $arguments);
+        return $this->model;
     }
 
     public function get(?int $id = null, Request|null $request = null)
