@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Storage;
 use Ramsey\Uuid\Uuid;
 use ReflectionClass;
 use ReflectionException;
+use Illuminate\Support\Str;
 
 abstract class BaseRepository implements BaseRepositoryInterface
 {
