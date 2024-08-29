@@ -26,6 +26,8 @@ abstract class BaseService implements BaseServiceInterface
 
     public ?string $parentCallback = null;
 
+    public ?string $callback = null;
+
     /**
      * @throws Exception
      */
@@ -44,7 +46,12 @@ abstract class BaseService implements BaseServiceInterface
 
     public function __call($name, $arguments)
     {
-        return call_user_func_array([$this, $name], $arguments);
+        $response = call_user_func_array([$this, $name], $arguments);
+        $callBackAllowed = ['update', 'store'];
+        if (in_array($name, $callBackAllowed) && !is_null($this->callback) && method_exists($this, $this->callback)) {
+            call_user_func_array([$this, $this->callback], [$response]);
+        }
+        return $response;
     }
 
     public function query()
