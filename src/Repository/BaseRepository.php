@@ -66,8 +66,8 @@ abstract class BaseRepository implements BaseRepositoryInterface
                 $scopes = explode(',', $request->input('scopes'));
             }
             foreach ($scopes as $index => $scope) {
+                $scope = 'scope' . ucfirst($scope);
                 if (method_exists($model, $scope)) {
-                    $scope = 'scope' . ucfirst($scope);
                     $model = $model->$scope();
                 }
             }
@@ -78,7 +78,7 @@ abstract class BaseRepository implements BaseRepositoryInterface
 
         }
 
-        return $this->model = $this->model->get();
+        return $this->model = $model->get();
     }
 
 
