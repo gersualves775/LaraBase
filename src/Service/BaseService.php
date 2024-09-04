@@ -86,8 +86,7 @@ abstract class BaseService implements BaseServiceInterface
     /**
      * @throws Exception
      */
-    protected
-    function store(Request|array $data)
+    protected function store(Request|array $data)
     {
         if (is_array($data)) {
             $data = new Request($data);
@@ -96,17 +95,25 @@ abstract class BaseService implements BaseServiceInterface
         $this->repositoryRequest->create($data->all());
 
         if (count($this->parentStore)) {
-            return $this->customStore($data);
+            $response = $this->customStore($data);
         } else {
-            return $this->repository->store($data);
+            $response = $this->repository->store($data);
         }
+
+        if (!is_null($this->parentCallback) && method_exists($this, $this->parentCallback)) {
+            $callbackResponse = call_user_func_array([$this, $this->parentCallback], [$response, $data]);
+            if ($callbackResponse) {
+                return $callbackResponse;
+            }
+        }
+
+        return $response;
     }
 
     /**
      * @throws Exception
      */
-    protected
-    function update(int $id, Request|array $data)
+    protected function update(int $id, Request|array $data)
     {
         if (is_array($data)) {
             $data = new Request($data);
@@ -123,14 +130,12 @@ abstract class BaseService implements BaseServiceInterface
 
     }
 
-    protected
-    function destroy(int $id)
+    protected function destroy(int $id)
     {
         return $this->repository->destroy($id);
     }
 
-    public
-    function mergeRequest(Request $request, array $array): Request
+    public function mergeRequest(Request $request, array $array): Request
     {
         $request->request->add($array);
         $request->merge($array);
@@ -138,24 +143,21 @@ abstract class BaseService implements BaseServiceInterface
         return $request;
     }
 
-    public
-    function paginate()
+    public function paginate()
     {
         return $this->repository
             ->get(null, request())
             ->paginate(request()->request->get('limit') ?? 10, request()->request->get('page') ?? 1);
     }
 
-    public
-    function applyExcept()
+    public function applyExcept()
     {
         foreach ($this->excepts as $index => $except) {
             request()->request->remove($except);
         }
     }
 
-    public
-    function applyCasts()
+    public function applyCasts()
     {
         foreach ($this->casts as $index => $cast) {
             $data = request()->get($index);
@@ -179,8 +181,7 @@ abstract class BaseService implements BaseServiceInterface
     /**
      * @throws Exception
      */
-    protected
-    function customStore(Request|array $data)
+    protected function customStore(Request|array $data)
     {
         $childrenStored = null;
         if (is_array($data)) {
@@ -371,8 +372,7 @@ abstract class BaseService implements BaseServiceInterface
         return [$childrenModel, $stored];
     }
 
-    public
-    function customValidations($settings, $service)
+    public function customValidations($settings, $service)
     {
         if (!isset($settings['persist'])) {
             throw new \Exception('O persist precisa ser definido');
