@@ -123,11 +123,19 @@ abstract class BaseService implements BaseServiceInterface
         $this->mergeRequest($data, [$this->getModel()->getKeyName() => $id]);
 
         if (count($this->parentStore)) {
-            return $this->customStore($data);
+            $response = $this->customStore($data);
         } else {
-            return $this->repository->update($data);
+            $response = $this->repository->update($data);
         }
 
+        if (!is_null($this->parentCallback) && method_exists($this, $this->parentCallback)) {
+            $callbackResponse = call_user_func_array([$this, $this->parentCallback], [$response, $data]);
+            if ($callbackResponse) {
+                return $callbackResponse;
+            }
+        }
+
+        return $response;
     }
 
     protected function destroy(int $id)
