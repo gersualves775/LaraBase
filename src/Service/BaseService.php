@@ -306,7 +306,7 @@ abstract class BaseService implements BaseServiceInterface
 
 
         if (empty($childrenData)) {
-            return [];
+            return [null, null];
         }
 
         $childrenKeyName = $childrenService->getModel()->getKeyName();
@@ -368,7 +368,7 @@ abstract class BaseService implements BaseServiceInterface
         $stored = null;
 
         if (empty($childrenData)) {
-            return [];
+            return [null, null];
         }
 
         if (array_filter($childrenData, fn($content) => is_array($content))) {
