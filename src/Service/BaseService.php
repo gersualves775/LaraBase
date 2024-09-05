@@ -204,8 +204,10 @@ abstract class BaseService implements BaseServiceInterface
                 $persist = $settings['persist'];
                 if ($persist === PersistEnum::BEFORE_PERSIST) {
                     list($childrenModelName, $childrenStored) = lcfirst($this->persistBefores($service, $settings, $data));
-                    $relationName = $settings['customRelationName'] ?? $childrenModelName;
-                    $relationBag[] = $relationName;
+                    if ($childrenModelName && $childrenStored) {
+                        $relationName = $settings['customRelationName'] ?? $childrenModelName;
+                        $relationBag[] = $relationName;
+                    }
                 }
             }
 
@@ -224,9 +226,11 @@ abstract class BaseService implements BaseServiceInterface
                         $relationName = $this->persistSync($model, $service, $settings, $data, ...['key' => $modelKeyName, 'value' => $model->$modelKeyName]);
                     }
                     list($childrenModelName, $childrenStored) = $this->persistAfters($service, $settings, $data, ...['key' => $modelKeyName, 'value' => $model->$modelKeyName]);
-                    $childrenModelName = lcfirst($childrenModelName);
-                    $relationName = $settings['customRelationName'] ?? $childrenModelName;
-                    $relationBag[] = $relationName;
+                    if ($childrenModelName && $childrenStored) {
+                        $childrenModelName = lcfirst($childrenModelName);
+                        $relationName = $settings['customRelationName'] ?? $childrenModelName;
+                        $relationBag[] = $relationName;
+                    }
                 }
 
                 if ($childrenStored && in_array(LarabaseOptions::MORPH, $settings['options'])) {
@@ -294,7 +298,7 @@ abstract class BaseService implements BaseServiceInterface
      * @throws ReflectionException
      */
     private
-    function persistBefores($service, $settings, $data): array|string
+    function persistBefores($service, $settings, $data): array
     {
         $childrenService = new $service();
         $childrenModel = (new ReflectionClass($childrenService->getModel()::class))->getShortName();
@@ -302,7 +306,7 @@ abstract class BaseService implements BaseServiceInterface
 
 
         if (empty($childrenData)) {
-            return '';
+            return [];
         }
 
         $childrenKeyName = $childrenService->getModel()->getKeyName();
@@ -364,7 +368,7 @@ abstract class BaseService implements BaseServiceInterface
         $stored = null;
 
         if (empty($childrenData)) {
-            return '';
+            return [];
         }
 
         if (array_filter($childrenData, fn($content) => is_array($content))) {
