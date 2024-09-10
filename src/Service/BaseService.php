@@ -49,7 +49,7 @@ abstract class BaseService implements BaseServiceInterface
         $response = call_user_func_array([$this, $name], $arguments);
         $callBackAllowed = ['update', 'store'];
         if (in_array($name, $callBackAllowed) && !is_null($this->callback) && method_exists($this, $this->callback)) {
-            call_user_func_array([$this, $this->callback], [$response]);
+            call_user_func_array([$this, $this->callback], [$response, request()]);
         }
         return $response;
     }
