@@ -287,11 +287,18 @@ abstract class BaseService implements BaseServiceInterface
             throw new Exception("A classe {$morphClass} não existe.");
         }
 
-        $morphClass::create([
-            "{$morphName}_id" => $morphId,
-            "{$morphName}_type" => $morphType,
-            $related_column => $modelKey
-        ]);
+        $morphClass::updateOrCreate(
+            [
+                "{$morphName}_id" => $morphId,
+                "{$morphName}_type" => $morphType,
+                $related_column => $modelKey
+            ],
+            [
+                "{$morphName}_id" => $morphId,
+                "{$morphName}_type" => $morphType,
+                $related_column => $modelKey
+            ]
+        );
     }
 
     /**
@@ -371,7 +378,7 @@ abstract class BaseService implements BaseServiceInterface
             return [null, null];
         }
 
-        if (array_filter($childrenData, fn($content) => is_array($content))) {
+        if (count(array_filter($childrenData, fn($content) => is_array($content))) === count($childrenData)) {
             foreach ($childrenData as $index => $childrenDatum) {
                 $childrenDatum = array_merge($childrenDatum, [$options['key'] => $options['value']]);
                 $stored = $childrenService->store(new Request($childrenDatum));
