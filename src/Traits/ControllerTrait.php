@@ -34,11 +34,19 @@ trait ControllerTrait
             return $paginated;
         }
         if ($request->has('limit')) {
-            return $query->limit($request->get('limit'))->get();
+            $response = $query->limit($request->get('limit'))->get();
+        } else {
+            $response = $query->get();
         }
 
+        if (property_exists($this, 'resource') && method_exists($this->resource, 'collection')) {
+            return $response->transform(function ($item) {
+                return $this->resource::resource($item);
+            });
+        }
 
-        return $query->get();
+        return $response;
+
     }
 
     public function makeQuery($subject, Request $request)
